@@ -1,5 +1,4 @@
 .exe
 .vscode/
 .env
-go.sum
 Makefile
