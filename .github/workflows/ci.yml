@@ -37,26 +37,44 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
 
+    services:
+      postgres:
+        # Docker Hub image
+        image: postgres:14
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB : banking_app
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+
+    steps:
+      
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.22'
         id: go
 
-      - name: Install Dependencies
-        run: |
-          go mod tidy
-          go mod download
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
 
       - name: Set Environment Variables
         env:
           DB_DRIVER: ${{ secrets.DB_DRIVER }}
           DB_SOURCE: ${{ secrets.DB_SOURCE }}
         run: echo "Environment variables set."
+
+      - name: Run migrations
+        uses: make migrateup
 
       - name: Test
         env:
